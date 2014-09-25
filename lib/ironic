@@ -51,7 +51,7 @@ IRONIC_SSH_VIRT_TYPE=${IRONIC_SSH_VIRT_TYPE:-virsh}
 IRONIC_TFTPBOOT_DIR=${IRONIC_TFTPBOOT_DIR:-$IRONIC_DATA_DIR/tftpboot}
 IRONIC_VM_SSH_PORT=${IRONIC_VM_SSH_PORT:-22}
 IRONIC_VM_SSH_ADDRESS=${IRONIC_VM_SSH_ADDRESS:-$HOST_IP}
-IRONIC_VM_COUNT=${IRONIC_VM_COUNT:-1}
+IRONIC_VM_COUNT=${IRONIC_VM_COUNT:-3}
 IRONIC_VM_SPECS_CPU=${IRONIC_VM_SPECS_CPU:-1}
 # NOTE(adam_g): Kernels 3.12 and newer user tmpfs by default for initramfs.
 #               DIB produced ramdisks tend to be ~250MB but tmpfs will only allow
@@ -324,7 +324,7 @@ function create_bridge_and_vms {
 function enroll_vms {
 
     CHASSIS_ID=$(ironic chassis-create -d "ironic test chassis" | grep " uuid " | get_field 2)
-    IRONIC_NET_ID=$(neutron net-list | grep private | get_field 1)
+    IRONIC_NET_ID=$(neutron net-list | grep demo1-net | get_field 1)
     local idx=0
 
     # work around; need to know what netns neutron uses for private network.
@@ -333,7 +333,7 @@ function enroll_vms {
     # the instances operation. If we don't do this, the first port creation
     # only happens in the middle of fake baremetal instance's spawning by nova,
     # so we'll end up with unbootable fake baremetal VM due to broken PXE.
-    PORT_ID=$(neutron port-create private | grep " id " | get_field 2)
+    PORT_ID=$(neutron port-create demo1-net | grep " id " | get_field 2)
 
     while read MAC; do
 
@@ -372,7 +372,7 @@ function enroll_vms {
     sudo ip link set dev brbm-tap1 up
     sudo ip link set dev ovs-tap1 up
 
-    sudo ovs-vsctl -- --if-exists del-port ovs-tap1 -- add-port br-int ovs-tap1 tag=$TAG_ID
+    sudo ovs-vsctl -- --if-exists del-port ovs-tap1 -- add-port br-int ovs-tap1
     sudo ovs-vsctl -- --if-exists del-port brbm-tap1 -- add-port $IRONIC_VM_NETWORK_BRIDGE brbm-tap1
 
     # Remove the port needed only for workaround. For additional info read the
