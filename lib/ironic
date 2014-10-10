@@ -375,6 +375,14 @@ function enroll_vms {
     sudo ovs-vsctl -- --if-exists del-port ovs-tap1 -- add-port br-int ovs-tap1
     sudo ovs-vsctl -- --if-exists del-port brbm-tap1 -- add-port $IRONIC_VM_NETWORK_BRIDGE brbm-tap1
 
+    DATAPATH_ID=$(sudo ovs-vsctl get Bridge br-int datapath_id | tr -d '"')
+    OF_PORT_NO=$(sudo ovs-vsctl get Interface ovs-tap1 ofport)
+    while read MAC; do
+        IRONIC_PORT=$(ironic port-list | awk '/ '"$MAC"' /{print $2}')
+        ironic port-update $IRONIC_PORT add extra/datapath_id=$DATAPATH_ID
+        ironic port-update $IRONIC_PORT add extra/of_port_no=$OF_PORT_NO
+    done < $IRONIC_VM_MACS_CSV_FILE
+
     # Remove the port needed only for workaround. For additional info read the
     # comment at the beginning of this function
     neutron port-delete $PORT_ID
